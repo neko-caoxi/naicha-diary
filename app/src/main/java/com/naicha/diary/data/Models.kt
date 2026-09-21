@@ -12,8 +12,6 @@ enum class DrinkCategory(
 ) {
     Tea("茶饮", "茶", 0xFFC98A5B),
     Coffee("咖啡", "咖", 0xFF8B5E3C),
-    Alcohol("酒", "酒", 0xFFB5651D),
-    Other("其他", "饮", 0xFF6FA8C7),
     ;
 
     companion object {
@@ -63,19 +61,6 @@ data class Drink(
                     "大杯" -> 210
                     else -> 260
                 }
-                DrinkCategory.Alcohol -> when (cupSize) {
-                    "单份" -> 90
-                    "小杯" -> 130
-                    "中杯" -> 180
-                    "大杯" -> 240
-                    else -> 320
-                }
-                DrinkCategory.Other -> when (cupSize) {
-                    "小杯" -> 70
-                    "中杯" -> 110
-                    "大杯" -> 150
-                    else -> 190
-                }
             }
             val sugarFactor = when (sugar) {
                 "全糖" -> 1.30
@@ -83,16 +68,11 @@ data class Drink(
                 "半糖" -> 1.00
                 "三分糖" -> 0.86
                 "无糖" -> 0.72
-                "无酒精", "低度" -> 0.85
-                "中度" -> 1.10
-                "高度" -> 1.35
-                "微醺" -> 1.00
                 else -> 1.0
             }
             val toppingWeight = when (category) {
                 DrinkCategory.Coffee -> 38
-                DrinkCategory.Alcohol -> 20
-                else -> 45
+                DrinkCategory.Tea -> 45
             }
             return (base * sugarFactor).toInt() + toppingCount * toppingWeight
         }
@@ -111,8 +91,6 @@ object Catalog {
 
     private val tea = DrinkCategory.Tea
     private val coffee = DrinkCategory.Coffee
-    private val alcohol = DrinkCategory.Alcohol
-    private val other = DrinkCategory.Other
 
     val brands: List<Brand> = listOf(
         // ── 茶饮（按 2026 门店规模 / 影响力排序）───────────────
@@ -180,39 +158,20 @@ object Catalog {
         Brand("皮爷咖啡", coffee, 0xFFA6192E, "皮", R.drawable.logo_peets),
         Brand("比星咖啡", coffee, 0xFF1E5AA8, "比", R.drawable.logo_beanstar),
         Brand("挪瓦咖啡", coffee, 0xFF2D9CDB, "挪", R.drawable.logo_nowwa),
-        Brand("肯悦咖啡", coffee, 0xFFC8102E, "肯"),
-        Brand("Costa", coffee, 0xFF6B2737, "C"),
-        Brand("麦咖啡", coffee, 0xFFC99A2E, "麦"),
-        Brand("便利店咖啡", coffee, 0xFF5B7C99, "便"),
         Brand("手冲 / 自制", coffee, 0xFF6B4F3D, "手"),
 
-        // ── 酒 ────────────────────────────────────────────────
-        Brand("精酿啤酒", alcohol, 0xFFD98E04, "啤"),
-        Brand("工业啤酒", alcohol, 0xFFE8C547, "酒"),
-        Brand("清酒", alcohol, 0xFFB9A88C, "清"),
-        Brand("威士忌", alcohol, 0xFFB5651D, "威"),
-        Brand("红酒", alcohol, 0xFF722F37, "红"),
-        Brand("白酒", alcohol, 0xFF8E99A4, "白"),
-        Brand("鸡尾酒", alcohol, 0xFF9B59B6, "鸡"),
-        Brand("梅酒", alcohol, 0xFF7D9D5C, "梅"),
-        Brand("果酒", alcohol, 0xFFE8A0BF, "果"),
-        Brand("米酒", alcohol, 0xFFC9B491, "米"),
-        Brand("香槟 / 起泡酒", alcohol, 0xFFD4AF37, "槟"),
-        Brand("酒吧 / 自制", alcohol, 0xFF6D4C41, "吧"),
-
-        // ── 其他 ──────────────────────────────────────────────
-        Brand("可乐", other, 0xFFE61A27, "可"),
-        Brand("雪碧", other, 0xFF00A651, "碧"),
-        Brand("果汁", other, 0xFFFF8C42, "汁"),
-        Brand("气泡水", other, 0xFF7FC8E8, "气"),
-        Brand("功能饮料", other, 0xFF1E90FF, "能"),
-        Brand("酸奶", other, 0xFFC9B79C, "酸"),
-        Brand("豆奶", other, 0xFFD8C49A, "豆"),
-        Brand("椰子水", other, 0xFF8FC7A8, "椰"),
-        Brand("柠檬茶", other, 0xFFE8C33C, "柠"),
-        Brand("矿泉水", other, 0xFFA8D8F0, "水"),
-        Brand("自制 / 其他", other, 0xFF8D6E63, "自"),
     )
+
+    /** 主体为满幅方形设计、适合圆角方形遮罩的品牌（其余一律用圆形） */
+    private val squircleBrands = setOf(
+        "阿水大杯茶", "茶百道", "茶话弄", "茶理宜世", "茶山派", "椿风",
+        "库迪咖啡", "淡马茶坊", "放牛斑", "洪都大拇指", "壶见", "卡旺卡",
+        "乐乐茶", "李山山茶事", "馬伍旺饮料厂", "蜜雪冰城", "茉沏", "奈雪的茶",
+        "OT 另茶", "7分甜", "丘大叔柠檬茶", "去茶山", "让茶", "山茶涧",
+        "拾叁茶", "TCROSS 交茶点", "甜啦啦", "爷爷不泡茶", "真茶屋",
+    )
+
+    fun isSquircle(brand: String): Boolean = brand in squircleBrands
 
     fun brandsOf(category: DrinkCategory): List<Brand> =
         brands.filter { it.category == category }
@@ -223,13 +182,8 @@ object Catalog {
     fun colorOf(name: String): Long = brandOf(name).color
 
     val cupSizes = listOf("小杯", "中杯", "大杯", "超大杯")
-    val alcoholSizes = listOf("单份", "小杯", "中杯", "大杯", "整瓶")
-
     val sugars = listOf("全糖", "七分糖", "半糖", "三分糖", "无糖")
-    val alcoholLevels = listOf("无酒精", "低度", "微醺", "中度", "高度")
-
     val ices = listOf("正常冰", "少冰", "去冰", "常温", "热饮")
-    val alcoholTemps = listOf("冰镇", "常温", "温热")
 
     val toppings = listOf(
         "珍珠", "波霸", "椰果", "仙草冻", "布丁",
@@ -243,40 +197,23 @@ object Catalog {
         "奶油", "肉桂", "糖浆", "冰博客", "椰乳",
     )
 
-    val alcoholAdds = listOf(
-        "柠檬", "冰块", "苏打水", "果汁", "姜片", "话梅", "薄荷", "盐边",
-    )
+    fun sizesFor(category: DrinkCategory): List<String> = cupSizes
 
-    val otherAdds = listOf(
-        "柠檬", "冰块", "蜂蜜", "珍珠", "椰果", "薄荷", "青柠", "盐",
-    )
+    fun sugarLabel(category: DrinkCategory): String = "甜度"
 
-    fun sizesFor(category: DrinkCategory): List<String> =
-        if (category == DrinkCategory.Alcohol) alcoholSizes else cupSizes
+    fun sugarOptions(category: DrinkCategory): List<String> = sugars
 
-    fun sugarLabel(category: DrinkCategory): String =
-        if (category == DrinkCategory.Alcohol) "酒精度" else "甜度"
+    fun iceLabel(category: DrinkCategory): String = "冰量 / 温度"
 
-    fun sugarOptions(category: DrinkCategory): List<String> =
-        if (category == DrinkCategory.Alcohol) alcoholLevels else sugars
-
-    fun iceLabel(category: DrinkCategory): String =
-        if (category == DrinkCategory.Alcohol) "温度" else "冰量 / 温度"
-
-    fun iceOptions(category: DrinkCategory): List<String> =
-        if (category == DrinkCategory.Alcohol) alcoholTemps else ices
+    fun iceOptions(category: DrinkCategory): List<String> = ices
 
     fun extraLabel(category: DrinkCategory): String = when (category) {
         DrinkCategory.Coffee -> "加料"
-        DrinkCategory.Alcohol -> "配料"
-        DrinkCategory.Other -> "加料"
         DrinkCategory.Tea -> "小料"
     }
 
     fun extraOptions(category: DrinkCategory): List<String> = when (category) {
         DrinkCategory.Coffee -> coffeeAdds
-        DrinkCategory.Alcohol -> alcoholAdds
-        DrinkCategory.Other -> otherAdds
         DrinkCategory.Tea -> toppings
     }
 
@@ -290,14 +227,6 @@ object Catalog {
         DrinkCategory.Coffee to listOf(
             "生椰拿铁", "美式", "拿铁", "卡布奇诺", "澳白",
             "冷萃", "燕麦拿铁", "焦糖玛奇朵", "摩卡", "手冲",
-        ),
-        DrinkCategory.Alcohol to listOf(
-            "精酿IPA", "拉格", "威士忌高球", "莫吉托", "金汤力",
-            "梅子酒", "清酒", "赤霞珠", "鸡尾酒", "黄酒",
-        ),
-        DrinkCategory.Other to listOf(
-            "可乐", "雪碧", "鲜橙汁", "气泡水", "酸奶",
-            "椰子水", "柠檬茶", "豆奶", "能量饮料", "矿泉水",
         ),
     )
 }

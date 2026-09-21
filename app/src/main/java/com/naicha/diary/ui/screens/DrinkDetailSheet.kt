@@ -222,7 +222,13 @@ private fun DetailHeader(tea: Drink, accent: Color) {
                 )
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    BrandBadge(badge = brand.badge, color = accent, size = 28.dp, logo = brand.logo)
+                    BrandBadge(
+                        badge = brand.badge,
+                        color = accent,
+                        size = 28.dp,
+                        logo = brand.logo,
+                        squircle = Catalog.isSquircle(brand.name),
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = tea.brand.ifBlank { "自制 / 其他" },

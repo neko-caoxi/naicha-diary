@@ -167,8 +167,9 @@ fun BrandBadge(
     size: Dp = 44.dp,
     modifier: Modifier = Modifier,
     logo: Int = 0,
+    squircle: Boolean = false,
 ) {
-    val shape: Shape = CircleShape
+    val shape: Shape = if (squircle) RoundedCornerShape(size * 0.30f) else CircleShape
     val deep = lerp(color, Color.Black, 0.22f)
     Box(
         modifier = modifier
@@ -225,8 +226,9 @@ fun BrandLogo(
     badge: String,
     size: Dp,
     modifier: Modifier = Modifier,
-    shape: Shape = CircleShape,
+    squircle: Boolean = false,
 ) {
+    val shape: Shape = if (squircle) RoundedCornerShape(size * 0.30f) else CircleShape
     if (logo != 0) {
         Box(
             modifier = modifier

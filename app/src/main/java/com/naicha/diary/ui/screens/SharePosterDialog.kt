@@ -327,6 +327,7 @@ private fun PosterCell(tea: Drink, modifier: Modifier = Modifier) {
                 color = color,
                 badge = brand.badge,
                 size = 46.dp,
+                squircle = Catalog.isSquircle(brand.name),
                 modifier = Modifier.align(Alignment.Center),
             )
         }

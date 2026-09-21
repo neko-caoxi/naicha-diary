@@ -267,6 +267,7 @@ private fun WallCard(tea: Drink, onClick: () -> Unit) {
                         color = base,
                         badge = brand.badge,
                         size = 84.dp,
+                        squircle = Catalog.isSquircle(brand.name),
                         modifier = Modifier.align(Alignment.Center),
                     )
                     Text(
@@ -348,7 +349,13 @@ private fun BrandRank(items: List<Drink>) {
             val color = Color(brand.color)
             SoftCard(elevation = 4.dp, shadowColor = color) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    BrandBadge(badge = brand.badge, color = color, size = 46.dp, logo = brand.logo)
+                    BrandBadge(
+                        badge = brand.badge,
+                        color = color,
+                        size = 46.dp,
+                        logo = brand.logo,
+                        squircle = Catalog.isSquircle(brand.name),
+                    )
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -492,7 +499,13 @@ private fun TimelineRow(tea: Drink, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.width(12.dp))
             } else {
-                BrandBadge(badge = brand.badge, color = color, size = 40.dp, logo = brand.logo)
+                BrandBadge(
+                    badge = brand.badge,
+                    color = color,
+                    size = 40.dp,
+                    logo = brand.logo,
+                    squircle = Catalog.isSquircle(brand.name),
+                )
                 Spacer(Modifier.width(12.dp))
             }
             Column(modifier = Modifier.weight(1f)) {

@@ -570,7 +570,13 @@ private fun BrandChip(brand: Brand, selected: Boolean, onClick: () -> Unit) {
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BrandBadge(badge = brand.badge, color = color, size = 40.dp, logo = brand.logo)
+        BrandBadge(
+            badge = brand.badge,
+            color = color,
+            size = 40.dp,
+            logo = brand.logo,
+            squircle = Catalog.isSquircle(brand.name),
+        )
         Spacer(Modifier.height(6.dp))
         Text(
             text = brand.name,

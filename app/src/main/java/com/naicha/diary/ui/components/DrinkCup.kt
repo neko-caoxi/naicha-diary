@@ -30,13 +30,11 @@ import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
 
-enum class CupStyle { Tea, Coffee, Glass, Can }
+enum class CupStyle { Tea, Coffee }
 
 fun cupStyleFor(category: DrinkCategory): CupStyle = when (category) {
     DrinkCategory.Tea -> CupStyle.Tea
     DrinkCategory.Coffee -> CupStyle.Coffee
-    DrinkCategory.Alcohol -> CupStyle.Glass
-    DrinkCategory.Other -> CupStyle.Can
 }
 
 @Composable
@@ -72,8 +70,6 @@ fun DrinkCup(
         when (style) {
             CupStyle.Tea -> drawTeaCup(liquidColor, strawColor, dots, phase)
             CupStyle.Coffee -> drawCoffeeCup(liquidColor, dots, phase)
-            CupStyle.Glass -> drawWineGlass(liquidColor, dots, phase)
-            CupStyle.Can -> drawCan(liquidColor, phase)
         }
     }
 }
@@ -234,205 +230,6 @@ private fun DrawScope.drawCoffeeCup(
 
     drawBaseShadow(cx, baseY, botHalf)
     drawSteam(cx, lidTop, h, phase)
-}
-
-// ── 酒杯 ──────────────────────────────────────────────────────────
-
-private fun DrawScope.drawWineGlass(
-    liquidColor: Color,
-    bubbles: List<Pair<Offset, Float>>,
-    phase: Float,
-) {
-    val w = size.width
-    val h = size.height
-    val cx = w / 2f
-    val topY = h * 0.10f
-    val bowlBottom = h * 0.56f
-    val halfTop = w * 0.29f
-
-    drawGlow(cx, h * 0.40f, w * 0.60f, liquidColor)
-
-    val bowl = Path().apply {
-        moveTo(cx - halfTop, topY)
-        lineTo(cx + halfTop, topY)
-        quadraticTo(cx + halfTop * 0.94f, bowlBottom, cx + w * 0.02f, bowlBottom)
-        lineTo(cx - w * 0.02f, bowlBottom)
-        quadraticTo(cx - halfTop * 0.94f, bowlBottom, cx - halfTop, topY)
-        close()
-    }
-
-    // 杯肚玻璃
-    drawPath(
-        bowl,
-        Brush.horizontalGradient(
-            listOf(
-                Color(0x22FFFFFF), Color(0x55FFFFFF),
-                Color(0x33FFFFFF), Color(0x22FFFFFF),
-            ),
-        ),
-    )
-
-    // 酒液
-    val liquidTop = topY + (bowlBottom - topY) * 0.44f
-    clipPath(bowl) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                listOf(
-                    liquidColor.copy(alpha = 0.78f),
-                    liquidColor,
-                    liquidColor.copy(alpha = 0.92f),
-                ),
-            ),
-            topLeft = Offset(cx - halfTop, liquidTop),
-            size = Size(halfTop * 2f, bowlBottom - liquidTop),
-        )
-        drawRect(
-            color = Color.White.copy(alpha = 0.30f),
-            topLeft = Offset(cx - halfTop, liquidTop),
-            size = Size(halfTop * 2f, h * 0.014f),
-        )
-        bubbles.take(6).forEachIndexed { index, (unit, factor) ->
-            val r = w * factor * 0.55f
-            val bob = sin(phase * 1.4f + index * 1.1f) * h * 0.02f
-            drawCircle(
-                color = Color.White.copy(alpha = 0.34f),
-                radius = r,
-                center = Offset(
-                    cx + (unit.x - 0.5f) * halfTop * 1.3f,
-                    liquidTop + h * 0.06f + unit.y * h * 0.24f + bob,
-                ),
-            )
-        }
-    }
-
-    drawPath(bowl, Color.White.copy(alpha = 0.55f), style = Stroke(width = w * 0.010f))
-
-    // 高光
-    drawPath(
-        Path().apply {
-            moveTo(cx - halfTop * 0.72f, topY + h * 0.05f)
-            lineTo(cx - halfTop * 0.50f, topY + h * 0.05f)
-            quadraticTo(cx - halfTop * 0.52f, bowlBottom - h * 0.06f, cx - w * 0.03f, bowlBottom - h * 0.02f)
-            lineTo(cx - w * 0.06f, bowlBottom - h * 0.02f)
-            quadraticTo(cx - halfTop * 0.80f, bowlBottom - h * 0.10f, cx - halfTop * 0.72f, topY + h * 0.05f)
-            close()
-        },
-        color = Color.White.copy(alpha = 0.50f),
-    )
-
-    // 杯柄
-    val stemTop = bowlBottom - h * 0.01f
-    val stemBottom = h * 0.88f
-    drawRoundRect(
-        brush = Brush.horizontalGradient(
-            listOf(Color(0x33FFFFFF), Color(0x77FFFFFF), Color(0x33FFFFFF)),
-        ),
-        topLeft = Offset(cx - w * 0.018f, stemTop),
-        size = Size(w * 0.036f, stemBottom - stemTop),
-        cornerRadius = CornerRadius(w * 0.018f, w * 0.018f),
-    )
-
-    // 底座
-    drawOval(
-        brush = Brush.horizontalGradient(
-            listOf(Color(0x33FFFFFF), Color(0x88FFFFFF), Color(0x33FFFFFF)),
-        ),
-        topLeft = Offset(cx - w * 0.26f, stemBottom - h * 0.012f),
-        size = Size(w * 0.52f, h * 0.040f),
-    )
-    drawOval(
-        color = Color.White.copy(alpha = 0.45f),
-        topLeft = Offset(cx - w * 0.26f, stemBottom - h * 0.012f),
-        size = Size(w * 0.52f, h * 0.040f),
-        style = Stroke(width = w * 0.008f),
-    )
-}
-
-// ── 罐装 ──────────────────────────────────────────────────────────
-
-private fun DrawScope.drawCan(liquidColor: Color, phase: Float) {
-    val w = size.width
-    val h = size.height
-    val cx = w / 2f
-    val topY = h * 0.14f
-    val bottomY = h * 0.93f
-    val half = w * 0.26f
-    val radius = half * 0.45f
-
-    drawGlow(cx, h * 0.52f, w * 0.58f, liquidColor)
-
-    val body = Path().apply {
-        moveTo(cx - half, topY + radius)
-        quadraticTo(cx - half, topY, cx - half + radius, topY)
-        lineTo(cx + half - radius, topY)
-        quadraticTo(cx + half, topY, cx + half, topY + radius)
-        lineTo(cx + half, bottomY - radius)
-        quadraticTo(cx + half, bottomY, cx + half - radius, bottomY)
-        lineTo(cx - half + radius, bottomY)
-        quadraticTo(cx - half, bottomY, cx - half, bottomY - radius)
-        close()
-    }
-
-    drawPath(
-        body,
-        Brush.horizontalGradient(
-            listOf(
-                liquidColor.copy(alpha = 0.92f),
-                Color.White.copy(alpha = 0.55f).compositeOver(liquidColor),
-                liquidColor,
-                liquidColor.copy(alpha = 0.80f),
-            ),
-            startX = cx - half,
-            endX = cx + half,
-        ),
-    )
-
-    // 拉环顶盖
-    drawOval(
-        color = Color(0xFFE4E4E4),
-        topLeft = Offset(cx - half, topY - h * 0.030f),
-        size = Size(half * 2f, h * 0.062f),
-    )
-    drawOval(
-        color = Color(0xFFB9B9B9),
-        topLeft = Offset(cx - half, topY - h * 0.030f),
-        size = Size(half * 2f, h * 0.062f),
-        style = Stroke(width = w * 0.008f),
-    )
-    drawOval(
-        color = Color(0xFF9E9E9E),
-        topLeft = Offset(cx - w * 0.055f, topY - h * 0.018f),
-        size = Size(w * 0.110f, h * 0.034f),
-    )
-    drawCircle(
-        color = Color(0xFF7A7A7A),
-        radius = w * 0.020f,
-        center = Offset(cx, topY - h * 0.001f),
-    )
-
-    // 高光
-    val shine = Path().apply {
-        moveTo(cx - half * 0.66f, topY + h * 0.10f)
-        lineTo(cx - half * 0.46f, topY + h * 0.10f)
-        lineTo(cx - half * 0.52f, bottomY - h * 0.10f)
-        lineTo(cx - half * 0.74f, bottomY - h * 0.10f)
-        close()
-    }
-    drawPath(shine, Color.White.copy(alpha = 0.42f))
-
-    // 装饰横带
-    val bandTop = topY + (bottomY - topY) * 0.52f + sin(phase) * h * 0.004f
-    clipPath(body) {
-        drawRect(
-            color = Color.White.copy(alpha = 0.22f),
-            topLeft = Offset(cx - half, bandTop),
-            size = Size(half * 2f, h * 0.055f),
-        )
-    }
-
-    drawPath(body, Color.Black.copy(alpha = 0.10f), style = Stroke(width = w * 0.008f))
-
-    drawBaseShadow(cx, bottomY, half)
 }
 
 // ── 通用绘制 ──────────────────────────────────────────────────────

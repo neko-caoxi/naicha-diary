@@ -464,7 +464,12 @@ private fun TeaRow(
                     .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                BrandBadge(badge = brand.badge, color = Color(brand.color), logo = brand.logo)
+                BrandBadge(
+                            badge = brand.badge,
+                            color = Color(brand.color),
+                            logo = brand.logo,
+                            squircle = Catalog.isSquircle(brand.name),
+                        )
 
                 Spacer(Modifier.width(12.dp))
 
