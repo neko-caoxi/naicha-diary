@@ -89,7 +89,7 @@ fun StatsScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 130.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 26.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {

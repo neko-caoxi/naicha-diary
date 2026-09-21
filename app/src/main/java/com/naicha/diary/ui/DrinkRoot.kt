@@ -370,7 +370,7 @@ private fun MilkBottomBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val barShape = RoundedCornerShape(32.dp)
+    val barShape = RoundedCornerShape(38.dp)
     Row(
         modifier = modifier
             .shadow(
@@ -381,23 +381,23 @@ private fun MilkBottomBar(
             )
             .clip(barShape)
             .hazeChild(state = hazeState) {
-                blurRadius = 26.dp
-                noiseFactor = 0.05f
+                blurRadius = 44.dp
+                noiseFactor = 0.035f
                 backgroundColor = Color.Transparent
-                tints = listOf(HazeTint(Color.White.copy(alpha = 0.55f)))
+                tints = listOf(HazeTint(Color.White.copy(alpha = 0.10f)))
             }
-            .background(Color.White.copy(alpha = 0.55f))
             .border(
-                width = 0.9.dp,
+                width = 1.1.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.95f),
-                        Color.White.copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.90f),
+                        Color.White.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.12f),
                     )
                 ),
                 shape = barShape,
             )
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 9.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -406,7 +406,7 @@ private fun MilkBottomBar(
             BouncyBox(onClick = { onSelect(index) }) {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(29.dp))
                         .background(
                             if (selected) {
                                 Brush.horizontalGradient(listOf(Caramel, Color(0xFFE0A574)))

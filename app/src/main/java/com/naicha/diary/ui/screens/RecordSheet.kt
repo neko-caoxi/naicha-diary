@@ -9,7 +9,6 @@ import androidx.compose.foundation.border
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +44,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,15 +52,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.layout.boundsInParent
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -298,21 +291,9 @@ fun RecordSheet(
                 item {
                     FieldGroup(
                         title = "品牌",
-                        subtitle = "${Catalog.brandsOf(category).size} 个 · 按住滑动可连选",
+                        subtitle = "${Catalog.brandsOf(category).size} 个",
                     ) {
-                        val brandBounds = remember(category) { mutableStateMapOf<String, Rect>() }
                         FlowRow(
-                            modifier = Modifier.pointerInput(category) {
-                                detectDragGestures(
-                                    onDragStart = { position ->
-                                        brandBounds.hitTest(position)?.let { brand = it }
-                                    },
-                                    onDrag = { change, _ ->
-                                        change.consume()
-                                        brandBounds.hitTest(change.position)?.let { brand = it }
-                                    },
-                                )
-                            },
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
@@ -321,9 +302,6 @@ fun RecordSheet(
                                     brand = item,
                                     selected = brand == item.name,
                                     onClick = { brand = item.name },
-                                    modifier = Modifier.onGloballyPositioned { coords ->
-                                        brandBounds[item.name] = coords.boundsInParent()
-                                    },
                                 )
                             }
                         }
@@ -591,18 +569,18 @@ private fun CategorySwitcher(
             .fillMaxWidth()
             .shadow(
                 elevation = 10.dp,
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(30.dp),
                 ambientColor = Color(current.accent).copy(alpha = 0.35f),
                 spotColor = Color(current.accent).copy(alpha = 0.35f),
             )
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(30.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = 0.8.dp,
                 brush = Brush.verticalGradient(
                     listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.15f))
                 ),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(30.dp),
             )
             .padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -618,7 +596,7 @@ private fun CategorySwitcher(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(19.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(bg)
                     .clickable { onSelect(entry) }
                     .padding(vertical = 15.dp),
@@ -642,8 +620,6 @@ private fun CategorySwitcher(
     }
 }
 
-private fun Map<String, Rect>.hitTest(position: Offset): String? =
-    entries.firstOrNull { it.value.contains(position) }?.key
 
 @Composable
 private fun BrandChip(
@@ -656,12 +632,12 @@ private fun BrandChip(
     Column(
         modifier = modifier
             .width(74.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(if (selected) color.copy(alpha = 0.12f) else Color.Transparent)
             .border(
                 width = if (selected) 2.dp else 0.dp,
                 color = if (selected) color else Color.Transparent,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(22.dp),
             )
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp),

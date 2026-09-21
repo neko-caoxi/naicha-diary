@@ -33,7 +33,7 @@ fun PearlField(
     modifier: Modifier = Modifier,
     count: Int = 16,
     seed: Int = 7,
-    alpha: Float = 1f,
+    alpha: Float = 1.6f,
 ) {
     val transition = rememberInfiniteTransition(label = "field")
     val phase by transition.animateFloat(
@@ -65,7 +65,7 @@ fun PearlField(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        blob.color.copy(alpha = 0.18f * alpha),
+                        blob.color.copy(alpha = 0.22f * alpha),
                         blob.color.copy(alpha = 0f),
                     ),
                     center = center,
@@ -75,7 +75,7 @@ fun PearlField(
                 center = center,
             )
             drawCircle(
-                color = blob.color.copy(alpha = 0.12f * alpha),
+                color = blob.color.copy(alpha = 0.16f * alpha),
                 radius = radius * 0.5f,
                 center = center,
             )

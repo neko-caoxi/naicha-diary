@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naicha.diary.ui.theme.Caramel
+import com.naicha.diary.ui.theme.SquircleShape
 import com.naicha.diary.ui.theme.Outline
 import com.naicha.diary.ui.theme.PearlSoft
 import kotlin.math.PI
@@ -55,9 +56,9 @@ import kotlin.math.sin
 @Composable
 fun SoftCard(
     modifier: Modifier = Modifier,
-    shape: Shape = MaterialTheme.shapes.large,
+    shape: Shape = SquircleShape(),
     color: Color = MaterialTheme.colorScheme.surface,
-    elevation: Dp = 10.dp,
+    elevation: Dp = 12.dp,
     shadowColor: Color = Caramel,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,

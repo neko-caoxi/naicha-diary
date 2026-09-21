@@ -199,7 +199,7 @@ private fun WallGrid(
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 130.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 26.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
     ) {
@@ -221,11 +221,11 @@ private fun WallCard(tea: Drink, onClick: () -> Unit) {
                 .fillMaxWidth()
                 .shadow(
                     elevation = 8.dp,
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(28.dp),
                     ambientColor = base.copy(alpha = 0.35f),
                     spotColor = base.copy(alpha = 0.35f),
                 )
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(MaterialTheme.colorScheme.surface),
         ) {
             Box(
@@ -341,7 +341,7 @@ private fun BrandRank(items: List<Drink>) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(1),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 130.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 26.dp),
         verticalItemSpacing = 12.dp,
     ) {
         items(ranking, key = { it.first }) { (brandName, count, spend) ->
@@ -417,7 +417,7 @@ private fun TimelineView(
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(1),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 130.dp),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 26.dp),
         verticalItemSpacing = 14.dp,
     ) {
         grouped.forEach { (month, teas) ->
