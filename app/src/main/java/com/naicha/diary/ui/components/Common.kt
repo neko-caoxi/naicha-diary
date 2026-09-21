@@ -57,7 +57,7 @@ fun SoftCard(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.large,
     color: Color = MaterialTheme.colorScheme.surface,
-    elevation: Dp = 5.dp,
+    elevation: Dp = 10.dp,
     shadowColor: Color = Caramel,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,
@@ -67,11 +67,25 @@ fun SoftCard(
             .shadow(
                 elevation = elevation,
                 shape = shape,
-                ambientColor = shadowColor.copy(alpha = 0.30f),
-                spotColor = shadowColor.copy(alpha = 0.30f),
+                ambientColor = shadowColor.copy(alpha = 0.34f),
+                spotColor = shadowColor.copy(alpha = 0.34f),
             )
             .clip(shape)
-            .background(color)
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.White, color),
+                )
+            )
+            .border(
+                width = 0.8.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.95f),
+                        Color.White.copy(alpha = 0.15f),
+                    )
+                ),
+                shape = shape,
+            )
             .padding(contentPadding),
         content = content,
     )

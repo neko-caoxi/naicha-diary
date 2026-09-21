@@ -6,7 +6,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +54,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +71,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
 import androidx.core.content.FileProvider
 import com.naicha.diary.data.AppSettings
 import com.naicha.diary.data.Brand
@@ -191,10 +205,16 @@ fun RecordSheet(
         }
     }
 
+    val sheetBackground by animateColorAsState(
+        targetValue = lerp(MaterialTheme.colorScheme.background, brandColor, 0.09f),
+        animationSpec = tween(420),
+        label = "sheetBackground",
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = sheetBackground,
         dragHandle = { SheetHandle() },
     ) {
         Column(modifier = Modifier.fillMaxHeight(0.94f)) {
@@ -269,26 +289,30 @@ fun RecordSheet(
                 }
 
                 item {
-                    FieldGroup(title = "品类") {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            DrinkCategory.entries.forEach { entry ->
-                                TagChip(
-                                    text = "${entry.badge} ${entry.label}",
-                                    selected = category == entry,
-                                    accent = Color(entry.accent),
-                                    onClick = { switchCategory(entry) },
-                                )
-                            }
-                        }
-                    }
+                    CategorySwitcher(
+                        current = category,
+                        onSelect = { switchCategory(it) },
+                    )
                 }
 
                 item {
                     FieldGroup(
                         title = "品牌",
-                        subtitle = "${Catalog.brandsOf(category).size} 个 · 点一下选中",
+                        subtitle = "${Catalog.brandsOf(category).size} 个 · 按住滑动可连选",
                     ) {
+                        val brandBounds = remember(category) { mutableStateMapOf<String, Rect>() }
                         FlowRow(
+                            modifier = Modifier.pointerInput(category) {
+                                detectDragGestures(
+                                    onDragStart = { position ->
+                                        brandBounds.hitTest(position)?.let { brand = it }
+                                    },
+                                    onDrag = { change, _ ->
+                                        change.consume()
+                                        brandBounds.hitTest(change.position)?.let { brand = it }
+                                    },
+                                )
+                            },
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
@@ -297,6 +321,9 @@ fun RecordSheet(
                                     brand = item,
                                     selected = brand == item.name,
                                     onClick = { brand = item.name },
+                                    modifier = Modifier.onGloballyPositioned { coords ->
+                                        brandBounds[item.name] = coords.boundsInParent()
+                                    },
                                 )
                             }
                         }
@@ -554,10 +581,80 @@ fun RecordSheet(
 }
 
 @Composable
-private fun BrandChip(brand: Brand, selected: Boolean, onClick: () -> Unit) {
+private fun CategorySwitcher(
+    current: DrinkCategory,
+    onSelect: (DrinkCategory) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = Color(current.accent).copy(alpha = 0.35f),
+                spotColor = Color(current.accent).copy(alpha = 0.35f),
+            )
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                width = 0.8.dp,
+                brush = Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.15f))
+                ),
+                shape = RoundedCornerShape(24.dp),
+            )
+            .padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        DrinkCategory.entries.forEach { entry ->
+            val selected = current == entry
+            val accent = Color(entry.accent)
+            val bg by animateColorAsState(
+                targetValue = if (selected) accent else Color.Transparent,
+                animationSpec = tween(320),
+                label = "catBg",
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(19.dp))
+                    .background(bg)
+                    .clickable { onSelect(entry) }
+                    .padding(vertical = 15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = entry.badge,
+                    fontSize = 23.sp,
+                    color = if (selected) Color.White else PearlSoft,
+                    fontWeight = FontWeight.Black,
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = entry.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) Color.White else PearlSoft,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+private fun Map<String, Rect>.hitTest(position: Offset): String? =
+    entries.firstOrNull { it.value.contains(position) }?.key
+
+@Composable
+private fun BrandChip(
+    brand: Brand,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val color = Color(brand.color)
     Column(
-        modifier = Modifier
+        modifier = modifier
             .width(74.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) color.copy(alpha = 0.12f) else Color.Transparent)

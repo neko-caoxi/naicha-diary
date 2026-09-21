@@ -18,6 +18,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -55,7 +56,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeTint
 import androidx.core.content.FileProvider
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import com.naicha.diary.app
 import com.naicha.diary.data.AppSettings
 import com.naicha.diary.data.Drink
@@ -88,6 +94,7 @@ fun DrinkRoot() {
     val repository = app.repository
     val items by repository.items.collectAsState()
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
 
     var tab by remember { mutableStateOf(0) }
     var showRecord by remember { mutableStateOf(false) }
@@ -176,7 +183,13 @@ fun DrinkRoot() {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Crossfade(targetState = tab, label = "tab") { current ->
+        Crossfade(
+            targetState = tab,
+            label = "tab",
+            modifier = Modifier
+                .fillMaxSize()
+                .haze(hazeState),
+        ) { current ->
             when (current) {
                 0 -> HomeScreen(
                     items = items,
@@ -221,6 +234,7 @@ fun DrinkRoot() {
         }
 
         MilkBottomBar(
+            hazeState = hazeState,
             current = tab,
             onSelect = { index ->
                 if (index == 3) showSettings = true else tab = index
@@ -348,22 +362,41 @@ private fun RecordFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 private fun MilkBottomBar(
+    hazeState: HazeState,
     current: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val barShape = RoundedCornerShape(32.dp)
     Row(
         modifier = modifier
             .shadow(
-                elevation = 20.dp,
-                shape = RoundedCornerShape(32.dp),
-                ambientColor = Caramel.copy(alpha = 0.45f),
-                spotColor = Caramel.copy(alpha = 0.45f),
+                elevation = 18.dp,
+                shape = barShape,
+                ambientColor = Caramel.copy(alpha = 0.42f),
+                spotColor = Caramel.copy(alpha = 0.42f),
             )
-            .clip(RoundedCornerShape(32.dp))
-            .background(Color.White.copy(alpha = 0.97f))
+            .clip(barShape)
+            .hazeChild(state = hazeState) {
+                blurRadius = 26.dp
+                noiseFactor = 0.05f
+                backgroundColor = Color.Transparent
+                tints = listOf(HazeTint(Color.White.copy(alpha = 0.55f)))
+            }
+            .background(Color.White.copy(alpha = 0.55f))
+            .border(
+                width = 0.9.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.95f),
+                        Color.White.copy(alpha = 0.25f),
+                    )
+                ),
+                shape = barShape,
+            )
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),

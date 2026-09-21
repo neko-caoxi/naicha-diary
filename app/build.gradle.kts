@@ -86,6 +86,7 @@ dependencies {
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.exifinterface)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.haze)
 }
 
 kotlin {
