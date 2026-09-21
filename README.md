@@ -4,6 +4,8 @@
 
 Jetpack Compose 写的，液态玻璃底栏，小票拍一张就能自动录入。
 
+**[⬇ 下载最新版 APK](https://github.com/neko-caoxi/naicha-diary/releases/latest)**　·　1.8 MB　·　Android 8.0+
+
 ## 功能
 
 - **快速记录** — 品牌、品名、规格、价格、甜度冰量、评分、照片
