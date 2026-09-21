@@ -10,7 +10,6 @@ import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -21,13 +20,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,12 +47,14 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,13 +79,14 @@ import com.naicha.diary.notify.LiveUpdateNotifier
 import com.naicha.diary.ui.components.BouncyBox
 import com.naicha.diary.ui.screens.HomeScreen
 import com.naicha.diary.ui.screens.RecordSheet
-import com.naicha.diary.ui.screens.SettingsSheet
+import com.naicha.diary.ui.screens.SettingsContent
 import com.naicha.diary.ui.screens.StatsScreen
 import com.naicha.diary.ui.screens.DrinkDetailSheet
 import com.naicha.diary.ui.screens.WallScreen
 import com.naicha.diary.ui.theme.Caramel
 import com.naicha.diary.ui.theme.PearlSoft
 import com.naicha.diary.util.TimeUtil
+import kotlinx.coroutines.launch
 import java.io.File
 
 private data class TabItem(val label: String, val icon: ImageVector)
@@ -86,6 +97,8 @@ private val tabs = listOf(
     TabItem("统计", Icons.Filled.DateRange),
     TabItem("我的", Icons.Filled.Person),
 )
+
+private const val RECORD_SLOT = 2
 
 const val dailyGoal = 1
 
@@ -98,7 +111,6 @@ fun DrinkRoot() {
 
     var tab by remember { mutableStateOf(0) }
     var showRecord by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Drink?>(null) }
     var detail by remember { mutableStateOf<Drink?>(null) }
 
@@ -182,15 +194,18 @@ fun DrinkRoot() {
         }
     }
 
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Crossfade(
-            targetState = tab,
-            label = "tab",
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
                 .haze(hazeState),
-        ) { current ->
-            when (current) {
+            beyondViewportPageCount = 1,
+        ) { page ->
+            when (page) {
                 0 -> HomeScreen(
                     items = items,
                     onRecord = {
@@ -202,10 +217,10 @@ fun DrinkRoot() {
                         if (AppSettings.hasApiKey) {
                             requestPick(forAi = true, fromCamera = true, openSheet = true)
                         } else {
-                            showSettings = true
+                            scope.launch { pagerState.animateScrollToPage(3) }
                         }
                     },
-                    onOpenWall = { tab = 1 },
+                    onOpenWall = { scope.launch { pagerState.animateScrollToPage(1) } },
                     onOpenDetail = { detail = it },
                 )
                 1 -> WallScreen(
@@ -213,48 +228,28 @@ fun DrinkRoot() {
                     onOpenDetail = { detail = it },
                 )
                 2 -> StatsScreen(items = items)
-                else -> HomeScreen(
+                else -> SettingsContent(
                     items = items,
-                    onRecord = {
-                        editing = null
-                        aiImage = null
-                        showRecord = true
-                    },
-                    onAiRecord = {
-                        if (AppSettings.hasApiKey) {
-                            requestPick(forAi = true, fromCamera = true, openSheet = true)
-                        } else {
-                            showSettings = true
-                        }
-                    },
-                    onOpenWall = { tab = 1 },
-                    onOpenDetail = { detail = it },
+                    onClearAll = { repository.clearAll() },
                 )
             }
         }
 
         MilkBottomBar(
             hazeState = hazeState,
-            current = tab,
+            pagerState = pagerState,
             onSelect = { index ->
-                if (index == 3) showSettings = true else tab = index
+                scope.launch { pagerState.animateScrollToPage(index) }
             },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 14.dp),
-        )
-
-        RecordFab(
-            onClick = {
+            onRecord = {
                 editing = null
                 aiImage = null
                 showRecord = true
             },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(end = 20.dp, bottom = 96.dp),
+                .padding(horizontal = 14.dp, vertical = 16.dp),
         )
     }
 
@@ -273,7 +268,7 @@ fun DrinkRoot() {
                 showRecord = false
                 editing = null
                 aiImage = null
-                showSettings = true
+                scope.launch { pagerState.animateScrollToPage(3) }
             },
             onPick = { forAi, fromCamera -> requestPick(forAi, fromCamera, openSheet = false) },
             onAiImageConsumed = { aiImage = null },
@@ -292,14 +287,6 @@ fun DrinkRoot() {
                 aiImage = null
                 photoImage = null
             },
-        )
-    }
-
-    if (showSettings) {
-        SettingsSheet(
-            items = items,
-            onDismiss = { showSettings = false },
-            onClearAll = { repository.clearAll() },
         )
     }
 
@@ -366,75 +353,141 @@ private fun RecordFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun MilkBottomBar(
     hazeState: HazeState,
-    current: Int,
+    pagerState: PagerState,
     onSelect: (Int) -> Unit,
+    onRecord: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val barShape = RoundedCornerShape(38.dp)
-    Row(
+    val barShape = RoundedCornerShape(42.dp)
+    val slotCount = tabs.size + 1
+    val gap = 4.dp
+
+    BoxWithConstraints(
         modifier = modifier
+            .fillMaxWidth()
             .shadow(
-                elevation = 18.dp,
+                elevation = 22.dp,
                 shape = barShape,
-                ambientColor = Caramel.copy(alpha = 0.42f),
-                spotColor = Caramel.copy(alpha = 0.42f),
+                ambientColor = Caramel.copy(alpha = 0.40f),
+                spotColor = Caramel.copy(alpha = 0.40f),
             )
             .clip(barShape)
             .hazeChild(state = hazeState) {
-                blurRadius = 44.dp
-                noiseFactor = 0.035f
+                blurRadius = 48.dp
+                noiseFactor = 0.03f
                 backgroundColor = Color.Transparent
-                tints = listOf(HazeTint(Color.White.copy(alpha = 0.10f)))
+                tints = listOf(HazeTint(Color.White.copy(alpha = 0.09f)))
             }
             .border(
-                width = 1.1.dp,
+                width = 1.2.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.90f),
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.12f),
+                        Color.White.copy(alpha = 0.92f),
+                        Color.White.copy(alpha = 0.30f),
+                        Color.White.copy(alpha = 0.10f),
                     )
                 ),
                 shape = barShape,
             )
-            .padding(horizontal = 9.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+            .padding(horizontal = 9.dp, vertical = 10.dp),
     ) {
-        tabs.forEachIndexed { index, item ->
-            val selected = current == index
-            BouncyBox(onClick = { onSelect(index) }) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(29.dp))
-                        .background(
-                            if (selected) {
-                                Brush.horizontalGradient(listOf(Caramel, Color(0xFFE0A574)))
-                            } else {
-                                Brush.horizontalGradient(
-                                    listOf(Color.Transparent, Color.Transparent)
-                                )
-                            }
-                        )
-                        .padding(horizontal = if (selected) 15.dp else 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        tint = if (selected) Color.White else PearlSoft,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    if (selected) {
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = item.label,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                        )
+        val slotWidth = (maxWidth - gap * (slotCount - 1)) / slotCount
+
+        // 连续位置：跳过中间的加号槽位
+        val continuous = pagerState.currentPage + pagerState.currentPageOffsetFraction
+        val slotPos = if (continuous < RECORD_SLOT - 0.5f) continuous else continuous + 1f
+
+        Box {
+            // 滑动指示器
+            Box(
+                modifier = Modifier
+                    .offset(x = (slotWidth + gap) * slotPos)
+                    .width(slotWidth)
+                    .height(62.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(
+                        Brush.horizontalGradient(listOf(Caramel, Color(0xFFE0A574)))
+                    ),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(gap),
+            ) {
+                tabs.forEachIndexed { index, item ->
+                    if (index == RECORD_SLOT) {
+                        RecordButton(onClick = onRecord, modifier = Modifier.width(slotWidth))
+                    }
+                    val selected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .width(slotWidth)
+                            .height(62.dp)
+                            .clip(RoundedCornerShape(32.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { onSelect(index) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                tint = if (selected) Color.White else PearlSoft,
+                                modifier = Modifier.size(25.dp),
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                text = item.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) Color.White else PearlSoft,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            )
+                        }
                     }
                 }
+                if (RECORD_SLOT >= tabs.size) {
+                    RecordButton(onClick = onRecord, modifier = Modifier.width(slotWidth))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    BouncyBox(onClick = onClick, modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(62.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .shadow(
+                        elevation = 14.dp,
+                        shape = CircleShape,
+                        ambientColor = Caramel.copy(alpha = 0.7f),
+                        spotColor = Caramel.copy(alpha = 0.7f),
+                    )
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFFE2A776), Caramel, Color(0xFFB0724A))
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "记一杯",
+                    tint = Color.White,
+                    modifier = Modifier.size(27.dp),
+                )
             }
         }
     }

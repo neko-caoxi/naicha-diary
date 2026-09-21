@@ -67,16 +67,6 @@ fun SettingsSheet(
     onClearAll: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    var apiKey by remember { mutableStateOf(AppSettings.apiKey) }
-    var reveal by remember { mutableStateOf(false) }
-    var testing by remember { mutableStateOf(false) }
-    var testResult by remember { mutableStateOf<String?>(null) }
-    var autoRecognize by remember { mutableStateOf(AppSettings.autoRecognize) }
-    var confirmClear by remember { mutableStateOf(false) }
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -98,18 +88,33 @@ fun SettingsSheet(
             }
         },
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(0.9f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = "我的",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+        SettingsContent(items = items, onClearAll = onClearAll)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsContent(
+    items: List<Drink>,
+    onClearAll: () -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var apiKey by remember { mutableStateOf(AppSettings.apiKey) }
+    var reveal by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    var autoRecognize by remember { mutableStateOf(AppSettings.autoRecognize) }
+    var confirmClear by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
 
             SoftCard {
                 SectionHeader(title = "AI 识图录入", subtitle = "拍小票自动填表")
@@ -278,8 +283,7 @@ fun SettingsSheet(
                 InfoLine("体积", "约 1.2 MB")
             }
 
-            Spacer(Modifier.height(30.dp))
-        }
+        Spacer(Modifier.height(30.dp))
     }
 }
 
