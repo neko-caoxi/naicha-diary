@@ -22,12 +22,24 @@ android {
         localeFilters += listOf("zh-rCN", "en")
     }
 
+    // 签名信息从 local.properties 读取，不入库
+    val localProps = java.util.Properties().apply {
+        val f = rootProject.file("local.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    val ksPath: String? = localProps.getProperty("RELEASE_STORE_FILE")
+    val ksPass: String? = localProps.getProperty("RELEASE_STORE_PASSWORD")
+    val ksAlias: String? = localProps.getProperty("RELEASE_KEY_ALIAS")
+    val keyPass: String? = localProps.getProperty("RELEASE_KEY_PASSWORD")
+
     signingConfigs {
-        create("release") {
-            storeFile = file("${rootDir}/naicha.jks")
-            storePassword = "REDACTED"
-            keyAlias = "naicha"
-            keyPassword = "REDACTED"
+        if (ksPath != null && ksPass != null && ksAlias != null && keyPass != null) {
+            create("release") {
+                storeFile = file(ksPath)
+                storePassword = ksPass
+                keyAlias = ksAlias
+                keyPassword = keyPass
+            }
         }
     }
 
@@ -37,7 +49,7 @@ android {
             isShrinkResources = true
             isDebuggable = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release")
         }
         debug {
             isMinifyEnabled = false

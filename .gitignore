@@ -14,3 +14,8 @@ local.properties
 
 # Kotlin
 .kotlin/
+
+# 签名与产物
+dist/
+*.jks
+*.keystore
