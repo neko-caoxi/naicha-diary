@@ -1,0 +1,16 @@
+# Gradle
+.gradle/
+build/
+app/build/
+gradle/wrapper/
+
+# 本地环境
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Kotlin
+.kotlin/
