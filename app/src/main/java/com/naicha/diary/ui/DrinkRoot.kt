@@ -11,6 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -21,6 +23,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +57,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,6 +93,7 @@ import com.naicha.diary.ui.screens.WallScreen
 import com.naicha.diary.ui.theme.Caramel
 import com.naicha.diary.ui.theme.PearlSoft
 import com.naicha.diary.util.TimeUtil
+import com.naicha.diary.util.rememberHaptics
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -361,6 +369,30 @@ private fun MilkBottomBar(
     val barShape = RoundedCornerShape(42.dp)
     val slotCount = tabs.size + 1
     val gap = 4.dp
+    val haptics = rememberHaptics()
+
+    // 手指在底栏上滑动时，玻璃内部的光随之流动
+    var fingerX by remember { mutableFloatStateOf(-400f) }
+    var touching by remember { mutableStateOf(false) }
+    val glowX = animateFloatAsState(
+        targetValue = fingerX,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f),
+        label = "glowX",
+    )
+    val glowAlpha = animateFloatAsState(
+        targetValue = if (touching) 1f else 0f,
+        animationSpec = tween(if (touching) 140 else 480),
+        label = "glowAlpha",
+    )
+    var lastHapticPage by remember { mutableIntStateOf(0) }
+
+    // 页面滑动经过时给一次轻触感
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage != lastHapticPage) {
+            lastHapticPage = pagerState.currentPage
+            haptics.tick()
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -389,6 +421,16 @@ private fun MilkBottomBar(
                 ),
                 shape = barShape,
             )
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull() ?: continue
+                        touching = change.pressed
+                        if (change.pressed) fingerX = change.position.x
+                    }
+                }
+            }
             .padding(horizontal = 9.dp, vertical = 10.dp),
     ) {
         val slotWidth = (maxWidth - gap * (slotCount - 1)) / slotCount
@@ -398,6 +440,29 @@ private fun MilkBottomBar(
         val slotPos = if (continuous < RECORD_SLOT - 0.5f) continuous else continuous + 1f
 
         Box {
+            // 玻璃流光（跟随手指，带弹簧阻尼）
+            Box(
+                modifier = Modifier
+                    .graphicsLayer {
+                        translationX = glowX.value - 90f
+                        alpha = glowAlpha.value * 0.75f
+                    }
+                    .width(180.dp)
+                    .height(62.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.42f),
+                                Color.White.copy(alpha = 0.62f),
+                                Color.White.copy(alpha = 0.42f),
+                                Color.Transparent,
+                            )
+                        ),
+                        RoundedCornerShape(32.dp),
+                    )
+            )
+
             // 滑动指示器
             Box(
                 modifier = Modifier
@@ -428,7 +493,10 @@ private fun MilkBottomBar(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                            ) { onSelect(index) },
+                            ) {
+                                haptics.tick()
+                                onSelect(index)
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

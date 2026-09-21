@@ -5,19 +5,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -57,6 +59,8 @@ import com.naicha.diary.ui.theme.Outline
 import com.naicha.diary.ui.theme.PearlSoft
 import com.naicha.diary.ui.theme.Strawberry
 import com.naicha.diary.ui.theme.Taro
+import com.naicha.diary.util.Haptics
+import com.naicha.diary.util.rememberHaptics
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,18 +92,19 @@ fun SettingsSheet(
             }
         },
     ) {
-        SettingsContent(items = items, onClearAll = onClearAll)
+        SettingsContent(items = items, onClearAll = onClearAll, showHeader = false)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
     items: List<Drink>,
     onClearAll: () -> Unit,
+    showHeader: Boolean = true,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptics = rememberHaptics()
 
     var apiKey by remember { mutableStateOf(AppSettings.apiKey) }
     var reveal by remember { mutableStateOf(false) }
@@ -107,15 +112,33 @@ fun SettingsContent(
     var testResult by remember { mutableStateOf<String?>(null) }
     var autoRecognize by remember { mutableStateOf(AppSettings.autoRecognize) }
     var confirmClear by remember { mutableStateOf(false) }
+    val crash = remember { DrinkApp.lastCrash(context) }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
+            .fillMaxSize()
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 132.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        if (showHeader) {
+            item {
+                Column {
+                    Text(
+                        text = "我的",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        text = "设置与数据",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
 
+        item {
             SoftCard {
                 SectionHeader(title = "AI 识图录入", subtitle = "拍小票自动填表")
                 Spacer(Modifier.height(12.dp))
@@ -150,9 +173,13 @@ fun SettingsContent(
                 )
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    SmallButton(text = if (reveal) "隐藏" else "显示") { reveal = !reveal }
+                    SmallButton(text = if (reveal) "隐藏" else "显示") {
+                        haptics.tick()
+                        reveal = !reveal
+                    }
                     Spacer(Modifier.width(8.dp))
                     SmallButton(text = "保存") {
+                        haptics.confirm()
                         AppSettings.apiKey = apiKey
                         testResult = "已保存"
                     }
@@ -161,6 +188,7 @@ fun SettingsContent(
                         text = if (testing) "测试中…" else "测试连接",
                         enabled = !testing,
                     ) {
+                        haptics.tick()
                         AppSettings.apiKey = apiKey
                         testing = true
                         testResult = null
@@ -211,6 +239,7 @@ fun SettingsContent(
                     Switch(
                         checked = autoRecognize,
                         onCheckedChange = {
+                            haptics.tick()
                             autoRecognize = it
                             AppSettings.autoRecognize = it
                         },
@@ -221,7 +250,9 @@ fun SettingsContent(
                     )
                 }
             }
+        }
 
+        item {
             SoftCard {
                 SectionHeader(title = "我的数据", subtitle = "全部存在本机")
                 Spacer(Modifier.height(12.dp))
@@ -245,9 +276,11 @@ fun SettingsContent(
                     text = if (confirmClear) "再点一次确认清空" else "清空所有记录",
                     onClick = {
                         if (confirmClear) {
+                            haptics.confirm()
                             onClearAll()
                             confirmClear = false
                         } else {
+                            haptics.tick()
                             confirmClear = true
                         }
                     },
@@ -258,9 +291,10 @@ fun SettingsContent(
                     },
                 )
             }
+        }
 
-            val crash = remember { DrinkApp.lastCrash(context) }
-            if (crash != null) {
+        if (crash != null) {
+            item {
                 SoftCard(shadowColor = Strawberry) {
                     SectionHeader(title = "上次出错记录", subtitle = "反馈问题时可以复制这段")
                     Spacer(Modifier.height(10.dp))
@@ -273,17 +307,18 @@ fun SettingsContent(
                     SmallButton(text = "清除") { DrinkApp.clearCrash(context) }
                 }
             }
+        }
 
+        item {
             SoftCard {
                 SectionHeader(title = "关于", subtitle = "饮品日记")
                 Spacer(Modifier.height(10.dp))
-                InfoLine("版本", "1.0.0")
+                InfoLine("版本", "1.1.0")
                 InfoLine("AI 模型", "deepseek-flash（视觉）")
                 InfoLine("数据存储", "本机文件，不上传")
-                InfoLine("体积", "约 1.2 MB")
+                InfoLine("玻璃材质", "chrisbanes/haze")
             }
-
-        Spacer(Modifier.height(30.dp))
+        }
     }
 }
 
@@ -308,7 +343,7 @@ private fun SmallButton(text: String, enabled: Boolean = true, onClick: () -> Un
 private fun StatBox(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(accent.copy(alpha = 0.12f))
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
