@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -23,7 +25,7 @@ android {
     }
 
     // 签名信息从 local.properties 读取，不入库
-    val localProps = java.util.Properties().apply {
+    val localProps = Properties().apply {
         val f = rootProject.file("local.properties")
         if (f.exists()) f.inputStream().use { load(it) }
     }
@@ -35,7 +37,7 @@ android {
     signingConfigs {
         if (ksPath != null && ksPass != null && ksAlias != null && keyPass != null) {
             create("release") {
-                storeFile = file(ksPath)
+                storeFile = rootProject.file(ksPath)
                 storePassword = ksPass
                 keyAlias = ksAlias
                 keyPassword = keyPass
